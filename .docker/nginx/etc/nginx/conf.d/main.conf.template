@@ -1,0 +1,54 @@
+server {
+    charset utf-8;
+    client_max_body_size 128M;
+
+    send_timeout 300;
+    proxy_read_timeout 300;
+    proxy_connect_timeout 300;
+
+    fastcgi_read_timeout 300;
+    fastcgi_send_timeout 300;
+
+
+    listen 80;
+
+    server_name hive.mobbtech.com;
+    root        /usr/src/web/;
+    index       index.php;
+
+    location = /php-fpm-status {
+        access_log off;
+        fastcgi_param SCRIPT_FILENAME $document_root$fastcgi_script_name;
+        fastcgi_index index.php;
+        include fastcgi_params;
+        fastcgi_pass ${FAST_CGI_PASS_ADDRESS}:9000;
+    }
+
+    location / {
+        try_files $uri $uri/ /index.php$is_args$args;
+    }
+
+    location ~ \.(js|css|png|jpg|gif|swf|ico|pdf|mov|fla|zip|rar)$ {
+        try_files $uri =404;
+    }
+    error_page 404 /404.html;
+
+    location ~ ^/assets/.*\.php$ {
+        deny all;
+    }
+
+    location ~ \.php$ {
+        include fastcgi_params;
+        fastcgi_param SCRIPT_FILENAME $document_root$fastcgi_script_name;
+        fastcgi_pass ${FAST_CGI_PASS_ADDRESS}:9000;
+        try_files $uri =404;
+    }
+
+    location ~* /\. {
+        deny all;
+    }
+
+    location /readiness-health-check {
+        return 200;
+    }
+}
